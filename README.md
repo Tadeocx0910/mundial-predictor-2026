@@ -1,0 +1,1 @@
+# mundial-predictor-2026
