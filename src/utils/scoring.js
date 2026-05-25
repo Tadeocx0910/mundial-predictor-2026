@@ -1,36 +1,54 @@
-export function matchPoints(pred, result) {
-  if (!pred || pred.home === '' || pred.away === '' || result?.home === '' || result?.away === '' || result?.home == null || result?.away == null) return 0;
-  const ph = Number(pred.home), pa = Number(pred.away), rh = Number(result.home), ra = Number(result.away);
+export function pointsForPrediction(pred, result) {
+  if (!pred || !result || result.homeGoals === "" || result.awayGoals === "") return 0;
+  const ph = Number(pred.homeGoals);
+  const pa = Number(pred.awayGoals);
+  const rh = Number(result.homeGoals);
+  const ra = Number(result.awayGoals);
   if ([ph,pa,rh,ra].some(Number.isNaN)) return 0;
   if (ph === rh && pa === ra) return 5;
-  const predSign = Math.sign(ph - pa);
-  const realSign = Math.sign(rh - ra);
-  const diffOk = (ph-pa) === (rh-ra);
-  if (predSign === realSign && diffOk) return 4;
-  if (predSign === realSign) return 3;
-  if (ph === rh || pa === ra) return 1;
-  return 0;
+  const predDiff = Math.sign(ph - pa);
+  const realDiff = Math.sign(rh - ra);
+  if (predDiff === realDiff) {
+    if ((ph - pa) === (rh - ra)) return 3;
+    return 2;
+  }
+  let pts = 0;
+  if (ph === rh) pts += 1;
+  if (pa === ra) pts += 1;
+  return pts;
 }
 
-export function buildStandings(groups, matches, results) {
-  const tables = {};
-  groups.forEach(g => {
-    tables[g.id] = g.teams.map(t => ({...t, PJ:0, G:0, E:0, P:0, GF:0, GC:0, DG:0, PTS:0}));
+export function emptyTable(teams) {
+  const table = {};
+  teams.forEach(t => {
+    table[t.name] = { team: t.name, flag: t.flag, group: t.group, pj:0, g:0, e:0, p:0, gf:0, gc:0, dg:0, pts:0 };
   });
-  matches.filter(m => m.stage === 'Grupos').forEach(m => {
+  return table;
+}
+
+export function buildGroupTables(teams, matches, results) {
+  const table = emptyTable(teams);
+  matches.filter(m => m.stage === "Grupo").forEach(m => {
     const r = results[m.id];
-    if (!r || r.home === '' || r.away === '' || r.home == null || r.away == null) return;
-    const hg = Number(r.home), ag = Number(r.away);
+    if (!r || r.homeGoals === "" || r.awayGoals === "") return;
+    const hg = Number(r.homeGoals), ag = Number(r.awayGoals);
     if (Number.isNaN(hg) || Number.isNaN(ag)) return;
-    const table = tables[m.group];
-    const h = table.find(t => t.name === m.home.name);
-    const a = table.find(t => t.name === m.away.name);
-    h.PJ++; a.PJ++; h.GF += hg; h.GC += ag; a.GF += ag; a.GC += hg;
-    h.DG = h.GF-h.GC; a.DG = a.GF-a.GC;
-    if (hg > ag) { h.G++; h.PTS += 3; a.P++; }
-    else if (hg < ag) { a.G++; a.PTS += 3; h.P++; }
-    else { h.E++; a.E++; h.PTS++; a.PTS++; }
+    const home = table[m.home], away = table[m.away];
+    if (!home || !away) return;
+    home.pj++; away.pj++;
+    home.gf += hg; home.gc += ag;
+    away.gf += ag; away.gc += hg;
+    if (hg > ag) { home.g++; away.p++; home.pts += 3; }
+    else if (hg < ag) { away.g++; home.p++; away.pts += 3; }
+    else { home.e++; away.e++; home.pts += 1; away.pts += 1; }
+    home.dg = home.gf - home.gc;
+    away.dg = away.gf - away.gc;
   });
-  Object.keys(tables).forEach(k => tables[k].sort((a,b) => b.PTS-a.PTS || b.DG-a.DG || b.GF-a.GF || a.name.localeCompare(b.name)));
-  return tables;
+  const grouped = {};
+  Object.values(table).forEach(row => {
+    grouped[row.group] ||= [];
+    grouped[row.group].push(row);
+  });
+  Object.keys(grouped).forEach(g => grouped[g].sort((a,b)=> b.pts-a.pts || b.dg-a.dg || b.gf-a.gf || a.team.localeCompare(b.team)));
+  return grouped;
 }

@@ -1,9 +1,13 @@
-# Mundial Predictor 2026
+# Mundial Predictor 2026 - Versión estable
 
-Versión corregida: inputs editables, admin funcional, 104 partidos, banderas y tablas automáticas.
+Esta versión está hecha para funcionar primero:
+- Login con Firebase
+- Pronósticos editables y guardables
+- Panel admin editable para resultados
+- 104 partidos: 72 de grupo + 32 eliminatorias
+- Tablas de grupos automáticas
+- Ranking automático
+- Sin Tailwind ni PostCSS para evitar errores de Vercel
 
-## Deploy
-Sube todos estos archivos a GitHub. Vercel ejecutará `npm run build` automáticamente.
-
-## Admin
-El correo admin configurado es: tadeobz09@gmail.com
+IMPORTANTE:
+Las plantillas finales completas de jugadores se deben cargar cuando estén verificadas/oficiales.
